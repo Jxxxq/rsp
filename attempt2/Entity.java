@@ -1,6 +1,7 @@
-package rsp2.attempt2;
+package me.capstone;
 
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -13,9 +14,9 @@ public class Entity {
 
 	private Map<Section, Point> genSeq;
 	private Map<Item, Integer> currentInv;
-	private final float SLOWNESS_FACTOR = 350f; //lower = slower faster
-	private final float WALK_SPEED = 500f;
-	private float fitness = -1f;
+	private final double SLOWNESS_FACTOR = 350f; //lower = slower faster
+	private final double WALK_SPEED = 500f;
+	private double fitness = -1f;
 	
 	public Entity(boolean firstGen) {
 		//IF THIS IS FALSE, GENSEQ MUST ALWAYS BE SET VIA SETGENSEQ
@@ -41,16 +42,16 @@ public class Entity {
 	}
 	
 	public void calculateFitness() {
-		float time = calculateTime();
-        fitness = (float)(10000000*Math.pow(1f/time,3));
+		double time = calculateTime();
+        fitness = (10000000*Math.pow(1f/time,2));
 	}
 	
-	private float calculateTime() {
-		float totalTime = 0f;
+	private double calculateTime() {
+		double totalTime = 0f;
 	    for (Map.Entry<Section, Point> entry : genSeq.entrySet()) {
 	        Section section = entry.getKey();
 	        Point point = entry.getValue();
-	        System.out.println("Section: " + section + " - Point: " + point);
+	        //System.out.println("Section: " + section + " - Point: " + point);
 	    }
 		ArrayList<Point> allPoints = new ArrayList<Point>(genSeq.values());
 		
@@ -58,9 +59,9 @@ public class Entity {
 		
 		Point origin = AppManager.getInstance().getOrigin();
 		Section firstSection = getSectionForPoint(allPoints.get(0));
-		float distanceFromFirst = (float) origin.distance(allPoints.get(0));
-		float currentWeight = calculateWeight();
-		float finalSpeed = (WALK_SPEED) / ((float)Math.pow(2, currentWeight/SLOWNESS_FACTOR));
+		double distanceFromFirst = (float) origin.distance(allPoints.get(0));
+		double currentWeight = calculateWeight();
+		double finalSpeed = (WALK_SPEED) / (Math.pow(2, currentWeight/SLOWNESS_FACTOR));
 		totalTime += (distanceFromFirst/finalSpeed);
 		//Goes through inventory and 'drops' off each item that has that same type has the section
 	    Iterator<Map.Entry<Item, Integer>> it = currentInv.entrySet().iterator();
@@ -70,17 +71,17 @@ public class Entity {
 	            it.remove();
 	        }
 	    }
-		
+
 		
 		
 		for(int i = 0; i < allPoints.size()-1; i++) {
 			Point p1 = allPoints.get(i);
 			Point p2 = allPoints.get(i+1);
 			Section sec = getSectionForPoint(p2);
-			float distance = (float) p1.distance(p2);
-			float cWeight = calculateWeight();
-			System.out.println("Weight from " + getSectionForPoint(p1).getName() + " to " + sec.getName() + " is " + cWeight);
-			float fSpeed = (WALK_SPEED) / ((float)Math.pow(2, cWeight/SLOWNESS_FACTOR));
+			double distance = (float) p1.distance(p2);
+			double cWeight = calculateWeight();
+			//System.out.println("Weight from " + getSectionForPoint(p1).getName() + " to " + sec.getName() + " is " + cWeight);
+			double fSpeed = (WALK_SPEED) / (Math.pow(2, cWeight/SLOWNESS_FACTOR));
 			totalTime += (distance/fSpeed);
 			
 	        it = currentInv.entrySet().iterator();
@@ -93,13 +94,13 @@ public class Entity {
 		}
 		
 		
-		float distanceFromLast = (float) origin.distance(allPoints.get(allPoints.size()-1));
-		float lastWeight = calculateWeight();
+		double distanceFromLast = origin.distance(allPoints.get(allPoints.size()-1));
+		double lastWeight = calculateWeight();
 		//Since last section, all previous stuff should've been dropped off
-		System.out.println("THIS SHOULD BE 0: " + lastWeight);
-		float finalLastSpeed = (WALK_SPEED) / ((float)Math.pow(2, lastWeight/SLOWNESS_FACTOR));
+		//System.out.println("THIS SHOULD BE 0: " + lastWeight);
+		double finalLastSpeed = (WALK_SPEED) / (Math.pow(2, lastWeight/SLOWNESS_FACTOR));
 		totalTime += (distanceFromLast/finalLastSpeed);
-		System.out.println("Total Time:"+ totalTime);
+		//System.out.println("Total Time:"+ totalTime);
 		return totalTime;
 	}
 	public Section getSectionForPoint(Point point) {
@@ -113,11 +114,11 @@ public class Entity {
 	        	return entry.getKey();
 	        }
 	    }
-	    return null; // or throw an exception if appropriate
+	    return null; 
 	}
 
-	private float calculateWeight() {
-		float n = 0;
+	private double calculateWeight() {
+		double n = 0;
 		for (Map.Entry<Item, Integer> entry : currentInv.entrySet()) {
 		    Item item = entry.getKey();
 		    Integer quantity = entry.getValue();
@@ -137,7 +138,7 @@ public class Entity {
     	return new LinkedHashMap<Section, Point>(genSeq);
     }
     
-    public float getFitness() {
+    public double getFitness() {
     	return fitness;
     }
     public static Entity orderedCrossover(Entity parent1, Entity parent2) {
@@ -194,6 +195,64 @@ public class Entity {
         for(Section oldSwappedKey:keySetList) {
         	swappedSeq.put(oldSwappedKey, oldSeq.get(oldSwappedKey));
         }
+    }
+    public boolean checkCollisionWithBarriers() {
+        Map<Point, Point> barriers = AppManager.getInstance().getCopyOfBarrierPoints();
+        ArrayList<Point> pathPoints = new ArrayList<>(genSeq.values());
+
+        for (int i = 0; i < pathPoints.size() - 1; i++) {
+            Point p1 = pathPoints.get(i);
+            Point p2 = pathPoints.get(i + 1);
+
+            for (Map.Entry<Point, Point> barrierEntry : barriers.entrySet()) {
+                Point barrierP1 = barrierEntry.getKey();
+                Point barrierP2 = barrierEntry.getValue();
+
+                if (lineIntersectsRectangle(p1, p2, barrierP1, barrierP2)) {
+                    return true; 
+                }
+            }
+        }
+
+        return false; 
+    }
+    private boolean lineIntersectsRectangle(Point lineP1, Point lineP2, Point rectP1, Point rectP2) {
+        int rectX = Math.min(rectP1.x, rectP2.x);
+        int rectY = Math.min(rectP1.y, rectP2.y);
+        int rectWidth = Math.abs(rectP1.x - rectP2.x);
+        int rectHeight = Math.abs(rectP1.y - rectP2.y);
+        Rectangle rectangle = new Rectangle(rectX, rectY, rectWidth, rectHeight);
+
+        if (rectangle.contains(lineP1) || rectangle.contains(lineP2)) {
+            return true;
+        }
+
+        Point topLeft = new Point(rectX, rectY);
+        Point topRight = new Point(rectX + rectWidth, rectY);
+        Point bottomLeft = new Point(rectX, rectY + rectHeight);
+        Point bottomRight = new Point(rectX + rectWidth, rectY + rectHeight);
+
+        return lineIntersectsLine(lineP1, lineP2, topLeft, topRight)
+            || lineIntersectsLine(lineP1, lineP2, topRight, bottomRight)
+            || lineIntersectsLine(lineP1, lineP2, bottomRight, bottomLeft)
+            || lineIntersectsLine(lineP1, lineP2, bottomLeft, topLeft);
+    }
+    private boolean lineIntersectsLine(Point l1p1, Point l1p2, Point l2p1, Point l2p2) {
+        int s1_x = l1p2.x - l1p1.x;     
+        int s1_y = l1p2.y - l1p1.y;
+        int s2_x = l2p2.x - l2p1.x;     
+        int s2_y = l2p2.y - l2p1.y;
+
+        int s = (-s1_y * (l1p1.x - l2p1.x) + s1_x * (l1p1.y - l2p1.y)) / (-s2_x * s1_y + s1_x * s2_y);
+        int t = ( s2_x * (l1p1.y - l2p1.y) - s2_y * (l1p1.x - l2p1.x)) / (-s2_x * s1_y + s1_x * s2_y);
+
+        return (s >= 0 && s <= 1 && t >= 0 && t <= 1);
+    }
+    
+    private float calcDistanceAroundRect(Point start, Point end, Rectangle rect) {
+    	return 0; // do this
+    	
+    	
     }
 
 	

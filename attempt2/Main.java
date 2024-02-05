@@ -1,4 +1,4 @@
-package rsp2.attempt2;
+package me.capstone;
 
 import java.util.Map;
 
@@ -22,7 +22,7 @@ public class Main {
 	    for (Map.Entry<Item, Integer> entry : inv.entrySet()) {
 	        Item item = entry.getKey();
 	        Integer quantity = entry.getValue();
-	        System.out.println(item.getName() + ": " + quantity); // Assuming Item has a "getName" method
+	        System.out.println(item.getName() + ": " + quantity); 
 	    }
 	}
 

@@ -1,9 +1,6 @@
-package rsp2.attempt2;
+package me.capstone;
 
-import java.awt.Point;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Random;
 
 public class Population {
@@ -33,8 +30,7 @@ public class Population {
 	
 	public void poolSelection() {
 		Entity maxFitnessEntity = population.get(0);
-		bestEntity = population.get(0);
-		
+		bestEntity = population.get(0);		
 		for(int i = 0; i < popMax; i++) {
 			if(population.get(i).getFitness() > maxFitnessEntity.getFitness()) {
 				maxFitnessEntity = population.get(i);
@@ -45,7 +41,7 @@ public class Population {
 		for(int i = 0; i < popMax; i++) {
 			double fitness = map(population.get(i).getFitness(), 0, maxFitnessEntity.getFitness(), 0, 1);
 			int n = (int)Math.floor(fitness*1000);
-			System.out.println(n);
+			//System.out.println(n);
 			for(int j = 0; j < n; j++) {
 				matingPool.add(population.get(i));
 			}

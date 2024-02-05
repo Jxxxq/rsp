@@ -1,4 +1,4 @@
-package rsp2.attempt2;
+package me.capstone;
 
 public enum Section {
 
